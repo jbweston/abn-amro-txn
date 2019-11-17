@@ -95,3 +95,10 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - abn-amro-txn
+    - hspec
+    - hspec-megaparsec
+    - QuickCheck
+    - quickcheck-instances
+    - quickcheck-arbitrary-adt
+    build-tools:
+    - hspec-discover
