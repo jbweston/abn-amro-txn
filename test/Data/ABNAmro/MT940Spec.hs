@@ -18,8 +18,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Instances.ByteString ()
 import Test.QuickCheck.Instances.Time ()
 
-import Data.ABNAmro.MT940.Atoms
-
+import Data.ABNAmro.MT940
 
 -- Useful instances for combining Gens
 
