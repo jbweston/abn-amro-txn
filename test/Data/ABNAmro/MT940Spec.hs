@@ -125,12 +125,14 @@ amount = do
     let maxWidth = 15
         maxDigits = maxWidth - 1  -- because we *must* have a decimal point
         maxDecimalPlaces = 2
-        decimalPoint = ","
-        mantissa w = nonZeroDigits' 1 <> digits' (w - 1)
-        decimal w = digits' (w - 1) <> nonZeroDigits' 1
-    n <- choose (1, maxDigits)
-    mw <- choose (1, n)
-    mantissa mw <> pure "," <> decimal (n - mw)
+        decimalPoint = pure ","
+        integerPart w = nonZeroDigits' 1 <> digits' (w - 1)
+        decimalPart w
+            | w == 0 = pure ""
+            | otherwise = digits' (w - 1) <> nonZeroDigits' 1
+    dw <- choose (0, maxDecimalPlaces)
+    mw <- choose (1, maxDigits - dw)
+    integerPart mw <> decimalPoint <> decimalPart dw
 
 
 -- Fields
