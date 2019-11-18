@@ -245,9 +245,14 @@ mt940Message =
 
 -- Specs
 
+newtype Any a = Any (Gen ByteString)
+
+canParse :: forall a. (Show a, Field a) => Any a -> SpecWith (Arg Property)
+canParse (Any gen) =
+    let isParsedBy p = shouldSucceedOn (MP.parse p "")
+    in it "can parse anything" $ forAll gen $ isParsedBy (parser :: Parser a)
+
 spec :: Spec
 spec =
     describe "TxnSide" $
-        it "parses" $
-            forAll transactionSide $
-                shouldSucceedOn (MP.parse (parser :: Parser TxnSide) "")
+        canParse (Any transactionSide :: Any TxnSide)
