@@ -222,7 +222,10 @@ messageInformation =
 
 envelopeHeader :: Gen ByteString
 envelopeHeader =
-    pure "ABNANL2A" <> eol <> pure "940" <> pure "ABNANL2A" <> eol
+       pure "ABNANL2A" <> eol
+    <> pure "940" <> eol
+    <> pure "ABNANL2A" <> eol
+
 envelopeTrailer :: Gen ByteString
 envelopeTrailer =
     pure "-" <> eol
