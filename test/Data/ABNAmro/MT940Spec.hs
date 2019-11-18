@@ -253,6 +253,15 @@ canParse (Any gen) =
     in it "can parse anything" $ forAll gen $ isParsedBy (parser :: Parser a)
 
 spec :: Spec
-spec =
+spec = do
+    -- Common fields
     describe "TxnSide" $
         canParse (Any transactionSide :: Any TxnSide)
+    describe "Currency" $
+        canParse (Any currency :: Any Currency)
+    describe "Date" $
+        canParse (Any fullDate :: Any Date)
+    describe "DateNoYear" $
+        canParse (Any condensedDate :: Any DateNoYear)
+    describe "Amount" $
+        canParse (Any amount :: Any Amount)
