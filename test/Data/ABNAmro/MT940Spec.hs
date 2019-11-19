@@ -138,11 +138,13 @@ amount = do
 
 transactionReferenceNumber :: Gen ByteString
 transactionReferenceNumber =
-    tag "20" <> alphanumeric 16 <> eol
+    tag "20"
+    <> digits' 8  -- logical file sequence number
+    <> digits' 8  -- sequence number
+    <> eol
 
 relatedReference :: Gen ByteString
-relatedReference =
-    tag "21" <> alphanumeric 16 <> eol
+relatedReference = pure ""  -- not used in ABN Amro Access Online
 
 accountNumber :: Gen ByteString
 accountNumber =
@@ -150,14 +152,16 @@ accountNumber =
 
 accountStatement :: Gen ByteString
 accountStatement =
-       oneof  [tag "28", tag "28C"]
-    <> digits 5
-    <> optional (digits 5)
+       tag "28"
+    -- This format is specific to accounts in the Netherlands
+    <> (fromString . show <$> choose (1, 366 :: Int))  -- day number withing current year
+    <> pure "01"  -- Run number
+    <> optional (pure "/" <> digits 5)  -- Sub-message number
     <> eol
 
 initialBookBalance :: Gen ByteString
 initialBookBalance =
-       oneof [tag "60F", tag "60M"]
+       tag "60F"
     <> transactionSide
     <> fullDate
     <> currency
@@ -168,14 +172,19 @@ accountStatementTransaction :: Gen ByteString
 accountStatementTransaction =
        tag "61"
     <> fullDate
-    <> condensedDate
+    <> optional condensedDate
     <> extendedTransactionSide
-    <> optional (alphabetic' 1)
     <> amount
-    <> alphanumeric' 4
-    <> alphanumeric 16
-    <> optional (alphanumeric 16)
-    <> optional (eol <> alphanumeric 34)
+    <> alphabetic' 1 <> digits' 3  -- transaction type code
+    -- Account holder reference; most of the time this is just NONREF
+    <> frequency [
+         (80, pure "NONREF")
+       , (20, alphanumeric 16)
+       ]
+    -- Bank reference
+    <> optional (pure "//" <> alphanumeric 14)
+    -- Transaction information
+    <> optional (eol <> pure "/EC-COMPLIANT/")
     <> eol
 
 transactionInformation :: Gen ByteString
@@ -185,7 +194,7 @@ transactionInformation =
 
 finalBookBalance :: Gen ByteString
 finalBookBalance =
-       oneof [tag "62F", tag "62M"]
+       tag "62F"
     <> transactionSide
     <> fullDate
     <> currency
@@ -211,13 +220,12 @@ futureValueBalance =
     <> eol
 
 messageInformation :: Gen ByteString
-messageInformation =
-       tag "86"
-    <> between (1, 6) (alphanumeric 65 <> eol)
+messageInformation = pure ""  -- not used in ABN Amro Access Online
 
 -- full message
 
--- we only support envelope type 2 for now
+-- MT940 OfficeNet (exported by ABN Amro Access Online)
+-- uses envelope type 2
 
 envelopeHeader :: Gen ByteString
 envelopeHeader =
