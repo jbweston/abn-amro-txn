@@ -154,7 +154,7 @@ accountStatement :: Gen ByteString
 accountStatement =
        tag "28"
     -- This format is specific to accounts in the Netherlands
-    <> (fromString . show <$> choose (1, 366 :: Int))  -- day number withing current year
+    <> (fromString . show <$> choose (1, 366 :: Int))  -- day number within current year
     <> pure "01"  -- Run number
     <> optional (pure "/" <> digits 5)  -- Sub-message number
     <> eol
