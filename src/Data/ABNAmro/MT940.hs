@@ -19,7 +19,7 @@ module Data.ABNAmro.MT940 (
     , AccountNumber
 ) where
 
-import Control.Monad (liftM2, replicateM)
+import Control.Monad (liftM2, replicateM, void)
 
 import Data.ByteString (ByteString, pack, unpack)
 import Data.ByteString.UTF8 (toString)
@@ -84,6 +84,9 @@ specialChar = oneOf $ unpack "\"\\$%&()*+-./;<= "
 -- | The subset of special ASCII characters that are allowed in MT940 messages
 alphanumericChar :: Parser Token
 alphanumericChar = upperChar <|> digitChar <|> specialChar
+
+tag :: Serialized -> Parser ()
+tag t = void . chunk $ ":" <> t <> ":"
 
 
 data TxnSide
@@ -166,7 +169,7 @@ instance Field Amount where
 data TransactionReference = TransactionReference Int Int deriving (Eq, Show)
 instance Field TransactionReference where
     parser = do
-        chunk ":20:"
+        tag "20"
         logicalFile <- read'' <$> exactly 8 digitChar
         sequenceNumber <- read'' <$> exactly 8 digitChar
         eol
@@ -176,7 +179,7 @@ instance Field TransactionReference where
 newtype AccountNumber = AccountNumber ByteString deriving (Eq, Show)
 instance Field AccountNumber where
     parser = do
-        chunk ":25:"
+        tag "25"
         acct <- AccountNumber . pack <$> upto 35 alphanumericChar
         eol
         pure acct
