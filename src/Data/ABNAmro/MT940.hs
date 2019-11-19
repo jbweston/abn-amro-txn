@@ -7,13 +7,18 @@ module Data.ABNAmro.MT940 (
     , parse
     , read'
     , read''
+    -- basic values
     , TxnSide
     , BalanceKind
     , Currency
     , Date
     , DateNoYear
     , Amount
+    -- composite values
+    , TransactionReference
 ) where
+
+import Control.Monad (liftM2, replicateM)
 
 import Data.ByteString (ByteString, pack)
 import Data.ByteString.UTF8 (toString)
@@ -44,6 +49,27 @@ class Field a where
 parse :: Field a => Serialized -> Either ParseError a
 parse = MP.parse parser ""
 
+-- Useful combinators
+
+-- | apply the given parser from 1 to n times
+upto :: Int -> Parser a -> Parser [a]
+upto n p
+    | n > 0 = liftM2 (:) p (go (n - 1) id)
+    | otherwise = error "upto used with negative argument"
+    where
+        go k f =
+            if n > 0 then do
+                r <- optional p
+                case r of
+                    Nothing -> pure (f [])
+                    Just  x -> go (k - 1) (f . (x:))
+            else pure (f [])
+
+-- | apply the given parser exactly n times
+exactly :: Int -> Parser a -> Parser [a]
+exactly n
+    | n > 0 = replicateM n
+    | otherwise = error "exactly used with negative argument"
 
 -- Basic value definitions
 
@@ -124,3 +150,15 @@ instance Field Amount where
         chunk ","
         decimalPart <- toDecimalPart <$> optional (some digitChar)
         pure . Amount . fromRational $ integerPart + decimalPart
+
+
+-- Composite values
+
+data TransactionReference = TransactionReference Int Int deriving (Eq, Show)
+instance Field TransactionReference where
+    parser = do
+        chunk ":20:"
+        logicalFile <- read'' <$> exactly 8 digitChar
+        sequenceNumber <- read'' <$> exactly 8 digitChar
+        eol
+        pure $ TransactionReference logicalFile sequenceNumber

@@ -277,3 +277,6 @@ spec = do
         canParse (Any condensedDate :: Any DateNoYear)
     describe "Amount" $
         canParse (Any amount :: Any Amount)
+    -- Composite fields
+    describe "TransactionReference" $
+        canParse (Any transactionReferenceNumber :: Any TransactionReference)
