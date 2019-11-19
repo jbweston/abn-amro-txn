@@ -23,8 +23,6 @@ import Data.Time (Day, fromGregorian)
 import Data.Void (Void)
 import Data.Word (Word8)
 
-import GHC.Generics
-
 import Text.Megaparsec hiding (Token, ParseError, parse)
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec as MP
@@ -58,7 +56,7 @@ data TxnSide
     | Debit
     | ReverseCredit
     | ReverseDebit
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Show)
 
 instance Field TxnSide where
     parser = choice [
@@ -72,7 +70,7 @@ instance Field TxnSide where
 data BalanceKind
     = Final
     | Intermediate
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Show)
 
 instance Field BalanceKind where
     parser = choice [
@@ -85,7 +83,7 @@ data Currency
     | GBP
     | USD
     | CAD
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Show)
 
 instance Field Currency where
     parser = choice [
@@ -99,7 +97,7 @@ instance Field Currency where
 datePart :: Read a => Parser a
 datePart = read'' <$> count 2 digitChar
 
-newtype Date = Date Day deriving (Eq, Generic, Show)
+newtype Date = Date Day deriving (Eq, Show)
 instance Field Date where
     parser = Date <$> (fromGregorian <$> year <*> month <*> day)
         where
@@ -107,7 +105,7 @@ instance Field Date where
             month = datePart
             day = datePart
 
-newtype DateNoYear = DateNoYear Day deriving (Eq, Generic, Show)
+newtype DateNoYear = DateNoYear Day deriving (Eq, Show)
 instance Field DateNoYear where
     parser = DateNoYear <$> (fromGregorian 0 <$> month <*> day)
         where
@@ -115,7 +113,7 @@ instance Field DateNoYear where
             day = datePart
 
 
-newtype Amount = Amount Decimal deriving (Eq, Generic, Show)
+newtype Amount = Amount Decimal deriving (Eq, Show)
 instance Field Amount where
     parser = do
         let toIntegerPart = (% 1) . read''
