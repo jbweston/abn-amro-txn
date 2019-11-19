@@ -16,11 +16,12 @@ module Data.ABNAmro.MT940 (
     , Amount
     -- composite values
     , TransactionReference
+    , AccountNumber
 ) where
 
 import Control.Monad (liftM2, replicateM)
 
-import Data.ByteString (ByteString, pack)
+import Data.ByteString (ByteString, pack, unpack)
 import Data.ByteString.UTF8 (toString)
 import Data.Decimal
 import Data.Ratio ((%))
@@ -29,7 +30,7 @@ import Data.Void (Void)
 import Data.Word (Word8)
 
 import Text.Megaparsec hiding (Token, ParseError, parse)
-import Text.Megaparsec.Byte
+import Text.Megaparsec.Byte hiding (alphaNumChar)
 import qualified Text.Megaparsec as MP
 
 type Token = Word8
@@ -76,6 +77,14 @@ exactly n
 -- TODO: use some template haskell to generate the parsers and
 --       serializers for these simple datatypes where string
 --       literals correspond 1-1 with type constructors
+
+specialChar :: Parser Token
+specialChar = oneOf $ unpack "\"\\$%&()*+-./;<= "
+
+-- | The subset of special ASCII characters that are allowed in MT940 messages
+alphanumericChar :: Parser Token
+alphanumericChar = upperChar <|> digitChar <|> specialChar
+
 
 data TxnSide
     = Credit
@@ -162,3 +171,12 @@ instance Field TransactionReference where
         sequenceNumber <- read'' <$> exactly 8 digitChar
         eol
         pure $ TransactionReference logicalFile sequenceNumber
+
+
+newtype AccountNumber = AccountNumber ByteString deriving (Eq, Show)
+instance Field AccountNumber where
+    parser = do
+        chunk ":25:"
+        acct <- AccountNumber . pack <$> upto 35 alphanumericChar
+        eol
+        pure acct

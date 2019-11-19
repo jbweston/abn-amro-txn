@@ -280,3 +280,5 @@ spec = do
     -- Composite fields
     describe "TransactionReference" $
         canParse (Any transactionReferenceNumber :: Any TransactionReference)
+    describe "AccountNumber" $
+        canParse (Any accountNumber :: Any AccountNumber)
