@@ -67,17 +67,11 @@ digits' n = value digitChars n n
 nonZeroDigits' :: Int -> Gen ByteString
 nonZeroDigits' n = value nonZeroDigitChars n n
 
-alphabetic :: Int -> Gen ByteString
-alphabetic = value alphabeticChars 1
-
 alphabetic' :: Int -> Gen ByteString
 alphabetic' n = value alphabeticChars n n
 
 alphanumeric :: Int -> Gen ByteString
 alphanumeric = value alphanumericChars 1
-
-alphanumeric' :: Int -> Gen ByteString
-alphanumeric' n = value alphanumericChars n n
 
 -- Combinators
 
