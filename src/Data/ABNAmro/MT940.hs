@@ -22,7 +22,7 @@ module Data.ABNAmro.MT940 (
     , Transaction
 ) where
 
-import Control.Monad (liftM2, replicateM, void)
+import Control.Monad (void)
 
 import Data.ByteString (ByteString, pack, unpack, concat)
 import Data.ByteString.UTF8 (toString)
@@ -52,30 +52,6 @@ class Field a where
 
 parse :: Field a => Serialized -> Either ParseError a
 parse = MP.parse parser ""
-
--- Useful combinators
-
--- | Apply the given parser between n and m times
-between :: Int -> Int -> Parser a -> Parser [a]
-between a b p
-    | b > a && a > 0 && b > 0 = liftM2 (++) (replicateM a p) (go (b - a) id)
-    | otherwise = pure []
-    where
-        go k f =
-            if k > 0 then do
-                r <- optional p
-                case r of
-                    Nothing -> pure (f [])
-                    Just  x -> go (k - 1) (f . (x:))
-            else pure (f [])
-
--- | Apply the given parser between 1 and n times
-upto :: Int -> Parser a -> Parser [a]
-upto = between 1
-
--- | apply the given parser exactly n times
-exactly :: Int -> Parser a -> Parser [a]
-exactly = replicateM
 
 -- Basic value definitions
 
@@ -175,8 +151,8 @@ data TransactionType = TransactionType Token Int deriving (Eq, Show)
 instance Field TransactionType where
     parser =
         TransactionType
-            <$> (head <$> exactly 1 alphabeticChar)
-            <*> (read'' <$> exactly 3 digitChar)
+            <$> (head <$> count 1 alphabeticChar)
+            <*> (read'' <$> count 3 digitChar)
 
 -- Composite values
 
@@ -184,8 +160,8 @@ data TransactionReference = TransactionReference Int Int deriving (Eq, Show)
 instance Field TransactionReference where
     parser = do
         tag "20"
-        logicalFile <- read'' <$> exactly 8 digitChar
-        sequenceNumber <- read'' <$> exactly 8 digitChar
+        logicalFile <- read'' <$> count 8 digitChar
+        sequenceNumber <- read'' <$> count 8 digitChar
         eol
         pure $ TransactionReference logicalFile sequenceNumber
 
@@ -194,7 +170,7 @@ newtype AccountNumber = AccountNumber ByteString deriving (Eq, Show)
 instance Field AccountNumber where
     parser = do
         tag "25"
-        acct <- AccountNumber . pack <$> upto 35 alphanumericChar
+        acct <- AccountNumber . pack <$> count' 1 35 alphanumericChar
         eol
         pure acct
 
@@ -202,11 +178,11 @@ data AccountStatementID = AccountStatementID Int Int (Maybe Int) deriving (Eq, S
 instance Field AccountStatementID where
     parser = do
         tag "28"
-        s <- between 3 5 digitChar
+        s <- count' 3 5 digitChar
         let (sn, rn) = splitAt (length s - 2) s
             statementNumber = read'' sn
             runNumber = read'' rn
-        subMessageNumber <- fmap read'' <$> optional (chunk "/" *> upto 5 digitChar)
+        subMessageNumber <- fmap read'' <$> optional (chunk "/" *> count' 1 5 digitChar)
         eol
         pure $ AccountStatementID statementNumber runNumber subMessageNumber
 
@@ -222,7 +198,7 @@ instance Field Transaction where
         txnSide <- parser :: Parser TxnSide
         amount <- parser :: Parser Amount
         typeCode <- parser :: Parser TransactionType
-        ref <- pack <$> upto 16 (notFollowedBy (chunk "//") *> alphanumericChar)
+        ref <- pack <$> count' 1 16 (notFollowedBy (chunk "//") *> alphanumericChar)
         let line = pack <$> many alphanumericChar <* eol
             marker = chunk ":"
         line  -- discard remainder of line (including abk reference)
