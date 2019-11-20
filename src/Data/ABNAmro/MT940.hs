@@ -19,11 +19,12 @@ module Data.ABNAmro.MT940 (
     , TransactionReference
     , AccountNumber
     , AccountStatementID
+    , Transaction
 ) where
 
 import Control.Monad (liftM2, replicateM, void)
 
-import Data.ByteString (ByteString, pack, unpack)
+import Data.ByteString (ByteString, pack, unpack, concat)
 import Data.ByteString.UTF8 (toString)
 import Data.Decimal
 import Data.Ratio ((%))
@@ -208,3 +209,23 @@ instance Field AccountStatementID where
         subMessageNumber <- fmap read'' <$> optional (chunk "/" *> upto 5 digitChar)
         eol
         pure $ AccountStatementID statementNumber runNumber subMessageNumber
+
+
+data Transaction =
+    Transaction TransactionType Date TxnSide Amount ByteString (Maybe ByteString)
+    deriving (Eq, Show)
+instance Field Transaction where
+    parser = do
+        chunk ":61:"
+        date <- parser :: Parser Date
+        optional $ count 4 digitChar  -- Condensed date; we just ignore
+        txnSide <- parser :: Parser TxnSide
+        amount <- parser :: Parser Amount
+        typeCode <- parser :: Parser TransactionType
+        ref <- pack <$> upto 16 (notFollowedBy (chunk "//") *> alphanumericChar)
+        let line = pack <$> many alphanumericChar <* eol
+            marker = chunk ":"
+        line  -- discard remainder of line (including abk reference)
+        optional $ notFollowedBy marker *> line  -- remove transaction information
+        info <- optional $ (:) <$> (chunk ":86:" *> line) <*> many (notFollowedBy marker *> line)
+        pure $ Transaction typeCode date txnSide amount ref (Data.ByteString.concat <$> info)

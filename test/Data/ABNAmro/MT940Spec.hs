@@ -195,6 +195,11 @@ transactionInformation =
        tag "86"
     <> between (1, 6) (alphanumeric 65 <> eol)
 
+
+transaction :: Gen ByteString
+transaction = accountStatementTransaction <> optional transactionInformation
+
+
 finalBookBalance :: Gen ByteString
 finalBookBalance =
        tag "62F"
@@ -289,3 +294,5 @@ spec = do
         canParse (Any accountNumber :: Any AccountNumber)
     describe "AccountStatementID" $
         canParse (Any accountStatementID :: Any AccountStatementID)
+    describe "Transaction" $
+        canParse (Any transaction :: Any Transaction)
