@@ -150,8 +150,8 @@ accountNumber :: Gen ByteString
 accountNumber =
     tag "25" <> alphanumeric 35 <> eol
 
-accountStatement :: Gen ByteString
-accountStatement =
+accountStatementID :: Gen ByteString
+accountStatementID =
        tag "28"
     -- This format is specific to accounts in the Netherlands
     <> (fromString . show <$> choose (1, 366 :: Int))  -- day number within current year
@@ -243,7 +243,7 @@ mt940Message =
         <> transactionReferenceNumber
         <> optional relatedReference
         <> accountNumber
-        <> accountStatement
+        <> accountStatementID
         <> initialBookBalance
         <> between (0, 100) (
                accountStatementTransaction
@@ -282,3 +282,5 @@ spec = do
         canParse (Any transactionReferenceNumber :: Any TransactionReference)
     describe "AccountNumber" $
         canParse (Any accountNumber :: Any AccountNumber)
+    describe "AccountStatementID" $
+        canParse (Any accountStatementID :: Any AccountStatementID)

@@ -17,6 +17,7 @@ module Data.ABNAmro.MT940 (
     -- composite values
     , TransactionReference
     , AccountNumber
+    , AccountStatementID
 ) where
 
 import Control.Monad (liftM2, replicateM, void)
@@ -29,7 +30,7 @@ import Data.Time (Day, fromGregorian)
 import Data.Void (Void)
 import Data.Word (Word8)
 
-import Text.Megaparsec hiding (Token, ParseError, parse)
+import Text.Megaparsec hiding (Token, ParseError, parse, between)
 import Text.Megaparsec.Byte hiding (alphaNumChar)
 import qualified Text.Megaparsec as MP
 
@@ -52,19 +53,23 @@ parse = MP.parse parser ""
 
 -- Useful combinators
 
--- | apply the given parser from 1 to n times
-upto :: Int -> Parser a -> Parser [a]
-upto n p
-    | n > 0 = liftM2 (:) p (go (n - 1) id)
-    | otherwise = error "upto used with negative argument"
+-- | Apply the given parser between n and m times
+between :: Int -> Int -> Parser a -> Parser [a]
+between a b p
+    | b > a && a > 0 && b > 0 = liftM2 (++) (replicateM a p) (go (b - a) id)
+    | otherwise = error "between used with invalid arguments="
     where
         go k f =
-            if n > 0 then do
+            if k > 0 then do
                 r <- optional p
                 case r of
                     Nothing -> pure (f [])
                     Just  x -> go (k - 1) (f . (x:))
             else pure (f [])
+
+-- | Apply the given parser between 1 and n times
+upto :: Int -> Parser a -> Parser [a]
+upto = between 1
 
 -- | apply the given parser exactly n times
 exactly :: Int -> Parser a -> Parser [a]
@@ -183,3 +188,15 @@ instance Field AccountNumber where
         acct <- AccountNumber . pack <$> upto 35 alphanumericChar
         eol
         pure acct
+
+data AccountStatementID = AccountStatementID Int Int (Maybe Int) deriving (Eq, Show)
+instance Field AccountStatementID where
+    parser = do
+        tag "28"
+        s <- between 3 5 digitChar
+        let (sn, rn) = splitAt (length s - 2) s
+            statementNumber = read'' sn
+            runNumber = read'' rn
+        subMessageNumber <- fmap read'' <$> optional (chunk "/" *> upto 5 digitChar)
+        eol
+        pure $ AccountStatementID statementNumber runNumber subMessageNumber
