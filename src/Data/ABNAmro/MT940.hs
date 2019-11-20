@@ -57,7 +57,7 @@ parse = MP.parse parser ""
 between :: Int -> Int -> Parser a -> Parser [a]
 between a b p
     | b > a && a > 0 && b > 0 = liftM2 (++) (replicateM a p) (go (b - a) id)
-    | otherwise = error "between used with invalid arguments="
+    | otherwise = pure []
     where
         go k f =
             if k > 0 then do
@@ -73,9 +73,7 @@ upto = between 1
 
 -- | apply the given parser exactly n times
 exactly :: Int -> Parser a -> Parser [a]
-exactly n
-    | n > 0 = replicateM n
-    | otherwise = error "exactly used with negative argument"
+exactly = replicateM
 
 -- Basic value definitions
 
