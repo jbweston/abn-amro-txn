@@ -18,7 +18,7 @@ module Data.ABNAmro.MT940 (
     -- composite values
     , TransactionReference
     , AccountNumber
-    , AccountStatementID
+    , StatementID
     , Transaction
 ) where
 
@@ -174,8 +174,8 @@ instance Field AccountNumber where
         eol
         pure acct
 
-data AccountStatementID = AccountStatementID Int Int (Maybe Int) deriving (Eq, Show)
-instance Field AccountStatementID where
+data StatementID = StatementID Int Int (Maybe Int) deriving (Eq, Show)
+instance Field StatementID where
     parser = do
         tag "28"
         s <- count' 3 5 digitChar
@@ -184,7 +184,7 @@ instance Field AccountStatementID where
             runNumber = read'' rn
         subMessageNumber <- fmap read'' <$> optional (chunk "/" *> count' 1 5 digitChar)
         eol
-        pure $ AccountStatementID statementNumber runNumber subMessageNumber
+        pure $ StatementID statementNumber runNumber subMessageNumber
 
 
 data Transaction =

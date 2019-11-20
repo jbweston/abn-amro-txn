@@ -292,7 +292,7 @@ spec = do
         canParse (Any transactionReferenceNumber :: Any TransactionReference)
     describe "AccountNumber" $
         canParse (Any accountNumber :: Any AccountNumber)
-    describe "AccountStatementID" $
-        canParse (Any accountStatementID :: Any AccountStatementID)
+    describe "StatementID" $
+        canParse (Any accountStatementID :: Any StatementID)
     describe "Transaction" $
         canParse (Any transaction :: Any Transaction)
