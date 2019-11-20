@@ -296,3 +296,6 @@ spec = do
         canParse (Any accountStatementID :: Any StatementID)
     describe "Transaction" $
         canParse (Any transaction :: Any Transaction)
+    -- total
+    describe "MT940Message" $
+        canParse (Any mt940Message :: Any MT940Message)

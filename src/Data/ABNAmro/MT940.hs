@@ -20,6 +20,7 @@ module Data.ABNAmro.MT940 (
     , AccountNumber
     , StatementID
     , Transaction
+    , MT940Message
 ) where
 
 import Control.Monad (void)
@@ -205,3 +206,33 @@ instance Field Transaction where
         optional $ notFollowedBy marker *> line  -- remove transaction information
         info <- optional $ (:) <$> (chunk ":86:" *> line) <*> many (notFollowedBy marker *> line)
         pure $ Transaction typeCode date txnSide amount ref (Data.ByteString.concat <$> info)
+
+
+data Balance = Balance TxnSide Date Currency Amount deriving (Eq, Show)
+instance Field Balance where
+    parser = Balance <$> parser <*> parser <*> parser <*> parser <* eol
+
+
+data MT940Message =
+    MT940Message TransactionReference StatementID AccountNumber Balance Balance [Transaction]
+    deriving (Eq, Show)
+instance Field MT940Message where
+    parser = do
+        envelopeHeader
+        txnRef <- parser
+        accountNumber <- parser
+        statementID <- parser
+        initialBalance <- tag "60F" *> parser
+        transactions <- count' 0 100 parser
+        finalBalance <- tag "62F" *> parser
+        -- ignore the "value" balance and "future value" balance
+        optional $ tag "64" *> (parser :: Parser Balance)
+        count' 0 100 $ tag "65" *> (parser :: Parser Balance)
+        envelopeTrailer
+        pure $ MT940Message txnRef statementID accountNumber initialBalance finalBalance transactions
+        where
+            envelopeHeader =
+                   chunk "ABNANL2A" *> eol
+                *> chunk "940" *> eol
+                *> chunk "ABNANL2A" *> eol
+            envelopeTrailer = chunk "-" *> eol
