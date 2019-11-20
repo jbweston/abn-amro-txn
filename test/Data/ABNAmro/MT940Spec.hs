@@ -133,6 +133,9 @@ amount = do
     mw <- choose (1, maxDigits - dw)
     integerPart mw <> decimalPoint <> decimalPart dw
 
+transactionTypeCode :: Gen ByteString
+transactionTypeCode = alphabetic' 1 <> digits' 3
+
 
 -- Fields
 
@@ -175,7 +178,7 @@ accountStatementTransaction =
     <> optional condensedDate
     <> extendedTransactionSide
     <> amount
-    <> alphabetic' 1 <> digits' 3  -- transaction type code
+    <> transactionTypeCode
     -- Account holder reference; most of the time this is just NONREF
     <> frequency [
          (80, pure "NONREF")
@@ -277,6 +280,8 @@ spec = do
         canParse (Any condensedDate :: Any DateNoYear)
     describe "Amount" $
         canParse (Any amount :: Any Amount)
+    describe "TransactionType" $
+        canParse (Any transactionTypeCode :: Any TransactionType)
     -- Composite fields
     describe "TransactionReference" $
         canParse (Any transactionReferenceNumber :: Any TransactionReference)

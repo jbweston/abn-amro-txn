@@ -14,6 +14,7 @@ module Data.ABNAmro.MT940 (
     , Date
     , DateNoYear
     , Amount
+    , TransactionType
     -- composite values
     , TransactionReference
     , AccountNumber
@@ -80,6 +81,9 @@ exactly = replicateM
 -- TODO: use some template haskell to generate the parsers and
 --       serializers for these simple datatypes where string
 --       literals correspond 1-1 with type constructors
+
+alphabeticChar :: Parser Token
+alphabeticChar = upperChar
 
 specialChar :: Parser Token
 specialChar = oneOf $ unpack "\"\\$%&()*+-./;<= "
@@ -166,6 +170,12 @@ instance Field Amount where
         decimalPart <- toDecimalPart <$> optional (some digitChar)
         pure . Amount . fromRational $ integerPart + decimalPart
 
+data TransactionType = TransactionType Token Int deriving (Eq, Show)
+instance Field TransactionType where
+    parser =
+        TransactionType
+            <$> (head <$> exactly 1 alphabeticChar)
+            <*> (read'' <$> exactly 3 digitChar)
 
 -- Composite values
 
