@@ -9,6 +9,9 @@ import System.Environment
 main :: IO ()
 main = do
     fileName <- head <$> getArgs
-    print . parse messages fileName =<< BS.readFile fileName
+    result <- parse messages fileName <$> BS.readFile fileName
+    case result of
+        Left a -> putStrLn $ errorBundlePretty a
+        Right a -> print a
     where
         messages = some parser :: Parser [MT940Message]
