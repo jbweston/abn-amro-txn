@@ -27,7 +27,6 @@ import Control.Monad (void)
 import Data.ByteString (ByteString, pack, unpack, concat)
 import Data.ByteString.UTF8 (toString)
 import Data.Decimal
-import Data.Ratio ((%))
 import Data.Time (Day, fromGregorian)
 import Data.Void (Void)
 import Data.Word (Word8)
@@ -141,14 +140,14 @@ instance Field DateNoYear where
 newtype Amount = Amount Decimal deriving (Eq, Show)
 instance Field Amount where
     parser = do
-        let toIntegerPart = (% 1) . read''
-            toDecimalPart p = case p of
-                Nothing -> 0
-                Just x -> read'' x % (10 ^ length x)
-        integerPart <- toIntegerPart <$> some digitChar
+        integerPart <- pack <$> some digitChar
         chunk ","
-        decimalPart <- toDecimalPart <$> optional (some digitChar)
-        pure . Amount . fromRational $ integerPart + decimalPart
+        decimalPart <- pack <$> many digitChar
+        let a = integerPart
+                <> case decimalPart of
+                    "" -> ""
+                    _ -> "." <> decimalPart
+        pure $ Amount $ read' a
 
 data TransactionType = TransactionType Token Int deriving (Eq, Show)
 instance Field TransactionType where
