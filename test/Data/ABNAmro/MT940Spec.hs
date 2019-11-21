@@ -136,8 +136,9 @@ transactionTypeCode = alphabetic' 1 <> digits' 3
 transactionReferenceNumber :: Gen ByteString
 transactionReferenceNumber =
     tag "20"
-    <> digits' 8  -- logical file sequence number
-    <> digits' 8  -- sequence number
+    -- This should be (digits' 8 <> digits' 8), but for some reason all the
+    -- MT940 files obtained from ABN Amro just have the string "ABN AMRO BANK NV"
+    <> pure "ABN AMRO BANK NV"
     <> eol
 
 relatedReference :: Gen ByteString
@@ -282,8 +283,6 @@ spec = do
     describe "TransactionType" $
         canParse (Any transactionTypeCode :: Any TransactionType)
     -- Composite fields
-    describe "TransactionReference" $
-        canParse (Any transactionReferenceNumber :: Any TransactionReference)
     describe "AccountNumber" $
         canParse (Any accountNumber :: Any AccountNumber)
     describe "StatementID" $

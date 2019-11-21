@@ -16,7 +16,6 @@ module Data.ABNAmro.MT940 (
     , Amount
     , TransactionType
     -- composite values
-    , TransactionReference
     , AccountNumber
     , StatementID
     , Transaction
@@ -157,15 +156,6 @@ instance Field TransactionType where
 
 -- Composite values
 
-data TransactionReference = TransactionReference Int Int deriving (Eq, Show)
-instance Field TransactionReference where
-    parser = do
-        tag "20"
-        logicalFile <- read'' <$> count 8 digitChar
-        sequenceNumber <- read'' <$> count 8 digitChar
-        eol
-        pure $ TransactionReference logicalFile sequenceNumber
-
 
 newtype AccountNumber = AccountNumber ByteString deriving (Eq, Show)
 instance Field AccountNumber where
@@ -214,12 +204,14 @@ instance Field Balance where
 
 
 data MT940Message =
-    MT940Message TransactionReference StatementID AccountNumber Balance Balance [Transaction]
+    MT940Message StatementID AccountNumber Balance Balance [Transaction]
     deriving (Eq, Show)
 instance Field MT940Message where
     parser = do
         envelopeHeader
-        txnRef <- parser
+        -- For some reason the MT940 messages just have this string in the
+        -- "transaction reference" field
+        tag "20" *> chunk "ABN AMRO BANK NV" *> eol
         accountNumber <- parser
         statementID <- parser
         initialBalance <- tag "60F" *> parser
@@ -229,7 +221,7 @@ instance Field MT940Message where
         optional $ tag "64" *> (parser :: Parser Balance)
         count' 0 100 $ tag "65" *> (parser :: Parser Balance)
         envelopeTrailer
-        pure $ MT940Message txnRef statementID accountNumber initialBalance finalBalance transactions
+        pure $ MT940Message statementID accountNumber initialBalance finalBalance transactions
         where
             envelopeHeader =
                    chunk "ABNANL2A" *> eol
