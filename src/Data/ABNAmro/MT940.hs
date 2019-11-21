@@ -72,6 +72,9 @@ alphanumericChar = upperChar <|> digitChar <|> specialChar
 tag :: Serialized -> Parser ()
 tag t = void . chunk $ ":" <> t <> ":"
 
+anyTag :: Parser ()
+anyTag = void $ chunk ":" *> count 2 digitChar *> optional upperChar *> chunk ":"
+
 
 data TxnSide
     = Credit
@@ -191,10 +194,9 @@ instance Field Transaction where
         typeCode <- parser :: Parser TransactionType
         ref <- pack <$> count' 1 16 (notFollowedBy (chunk "//") *> alphanumericChar)
         let line = pack <$> many alphanumericChar <* eol
-            marker = chunk ":"
-        line  -- discard remainder of line (including abk reference)
-        optional $ notFollowedBy marker *> line  -- remove transaction information
-        info <- optional $ (:) <$> (chunk ":86:" *> line) <*> many (notFollowedBy marker *> line)
+        line  -- discard remainder of line (including abn reference)
+        optional $ notFollowedBy anyTag *> line  -- remove transaction information
+        info <- optional $ (:) <$> (tag "86" *> line) <*> many (notFollowedBy anyTag *> line)
         pure $ Transaction typeCode date txnSide amount ref (Data.ByteString.concat <$> info)
 
 
