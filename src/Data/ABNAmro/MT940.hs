@@ -186,7 +186,7 @@ data Transaction =
     deriving (Eq, Show)
 instance Field Transaction where
     parser = do
-        chunk ":61:"
+        tag "61"
         date <- parser :: Parser Date
         optional $ count 4 digitChar  -- Condensed date; we just ignore
         txnSide <- parser :: Parser TxnSide
