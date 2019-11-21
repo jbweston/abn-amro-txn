@@ -63,7 +63,7 @@ alphabeticChar :: Parser Token
 alphabeticChar = upperChar
 
 specialChar :: Parser Token
-specialChar = oneOf $ unpack "\"\\$%&()*+-./;<= "
+specialChar = oneOf $ unpack "\"\\$%&()*+-.,/;:<= "
 
 -- | The subset of special ASCII characters that are allowed in MT940 messages
 alphanumericChar :: Parser Token

@@ -40,7 +40,7 @@ alphabeticChars :: Gen Word8
 alphabeticChars = elements $ unpack "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 specialChars :: Gen Word8
-specialChars = elements $ unpack "\"\\$%&()*+-./;<= "
+specialChars = elements $ unpack "\"\\$%&()*+-.,/;:<= "
 
 eol :: Gen ByteString
 eol = elements ["\n", "\r\n"]
